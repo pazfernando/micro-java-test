@@ -21,7 +21,7 @@ mvn clean package
 Para construir la imagen Docker:
 
 ```bash
-docker build -t db-connector .
+docker build -t hello-world .
 ```
 
 ## Ejecución local

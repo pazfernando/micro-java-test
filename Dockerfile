@@ -7,7 +7,7 @@ ENV TZ=America/Mexico_City
 WORKDIR /app
 
 # Copia el archivo JAR construido a la imagen
-COPY target/db-connector-0.0.1-SNAPSHOT.jar app.jar
+COPY target/helloworld-0.0.1-SNAPSHOT.war* app.jar
 
 # Puerto expuesto por la aplicación
 EXPOSE 8080
