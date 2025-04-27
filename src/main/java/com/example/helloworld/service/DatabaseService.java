@@ -40,19 +40,19 @@ public class DatabaseService {
     @Value("${db.postgres.proxy}")
     private String pgProxyEndpoint;
 
-    @Value("${db.docdb.host}")
+    @Value("${spring.data.mongodb.host}")
     private String docdbHost;
 
-    @Value("${db.docdb.port}")
+    @Value("${spring.data.mongodb.port}")
     private String docdbPort;
 
-    @Value("${db.docdb.dbname}")
+    @Value("${spring.data.mongodb.database}")
     private String docdbDatabase;
 
-    @Value("${db.docdb.user}")
+    @Value("${spring.data.mongodb.username}")
     private String docdbUser;
 
-    @Value("${db.docdb.password}")
+    @Value("${spring.data.mongodb.password}")
     private String docdbPassword;
 
     public String testPostgresConnectivity() {
@@ -92,9 +92,9 @@ public class DatabaseService {
 
     public String testDocumentDBConnectivity() {
         String docdbUri = String.format(
-                "mongodb://%s:%s@%s:%s/%s?ssl=true&replicaSet=rs0&retryWrites=false",
-                docdbUser, docdbPassword, docdbHost, docdbPort, docdbDatabase);
-
+            "mongodb://%s:%s@%s:%s/%s?replicaSet=rs0&readPreference=secondaryPreferred&retryWrites=false",
+            docdbUser, docdbPassword, docdbHost, docdbPort, docdbDatabase); // Sin TLS o con TLS funciona para conectarse
+    
         logger.info("Conectando a DocumentDB con URI: {}", docdbUri);
 
         try {

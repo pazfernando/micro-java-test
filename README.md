@@ -29,7 +29,7 @@ docker build -t hello-world .
 Para ejecutar la aplicación localmente:
 
 ```bash
-docker run -p 8080:8080 \
+docker run -p 8090:8080 \
   -e PG_HOST=your-postgres-host \
   -e PG_PORT=5432 \
   -e PG_DBNAME=postgres \
@@ -41,7 +41,7 @@ docker run -p 8080:8080 \
   -e DOCDB_DBNAME=admin \
   -e DOCDB_USER=docdb-user \
   -e DOCDB_PASSWORD=your-docdb-password \
-  db-connector
+  hello-world
 ```
 
 ## Subir a Amazon ECR
@@ -53,17 +53,17 @@ aws ecr get-login-password --region <region> | docker login --username AWS --pas
 
 2. Crear un repositorio en ECR (si no existe):
 ```bash
-aws ecr create-repository --repository-name db-connector
+aws ecr create-repository --repository-name hello-world
 ```
 
 3. Etiquetar la imagen:
 ```bash
-docker tag db-connector:latest <aws-account-id>.dkr.ecr.<region>.amazonaws.com/db-connector:latest
+docker tag hello-world:latest <aws-account-id>.dkr.ecr.<region>.amazonaws.com/hello-world:latest
 ```
 
 4. Enviar la imagen a ECR:
 ```bash
-docker push <aws-account-id>.dkr.ecr.<region>.amazonaws.com/db-connector:latest
+docker push <aws-account-id>.dkr.ecr.<region>.amazonaws.com/hello-world:latest
 ```
 
 ## API Endpoints
