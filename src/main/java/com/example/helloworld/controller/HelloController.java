@@ -17,7 +17,7 @@ public class HelloController {
     }
 
     @GetMapping("/db-test")
-    public String testDatabaseConnections(@RequestParam(defaultValue = "all") String dbType) {
+    public String testDatabaseConnections(@RequestParam(defaultValue = "all") String dbType) throws Exception {
         switch (dbType.toLowerCase()) {
             case "none":
                 return "No se ejecuto nada.";

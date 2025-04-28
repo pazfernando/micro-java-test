@@ -9,36 +9,35 @@ import java.sql.Statement;
 import org.bson.Document;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
+import org.springframework.data.mongodb.core.MongoTemplate;
+import org.springframework.jdbc.core.JdbcTemplate;
 import org.springframework.stereotype.Service;
 
-import com.mongodb.ConnectionString;
-import com.mongodb.MongoClientSettings;
-import com.mongodb.client.MongoClient;
-import com.mongodb.client.MongoClients;
 import com.mongodb.client.MongoDatabase;
 
 @Service
 public class DatabaseService {
     private static final Logger logger = LoggerFactory.getLogger(DatabaseService.class);
 
-    @Value("${db.postgres.host}")
-    private String pgHost;
-
-    @Value("${db.postgres.port}")
-    private String pgPort;
-
-    @Value("${db.postgres.dbname}")
-    private String pgDbName;
-
-    @Value("${db.postgres.user}")
-    private String pgUser;
-
-    @Value("${db.postgres.password}")
-    private String pgPassword;
+    @Value("${spring.datasource.url}")
+    private String pgEndpoint;
 
     @Value("${db.postgres.proxy}")
     private String pgProxyEndpoint;
+
+    @Value("${db.postgres.proxy.port}")
+    private String pgProxyPort;
+
+    @Value("${db.postgres.proxy.dbname}")
+    private String pgProxyDbName;
+
+    @Value("${db.postgres.proxy.user}")
+    private String pgProxyUser;
+
+    @Value("${db.postgres.proxy.password}")
+    private String pgProxyPassword;
 
     @Value("${spring.data.mongodb.host}")
     private String docdbHost;
@@ -55,22 +54,34 @@ public class DatabaseService {
     @Value("${spring.data.mongodb.password}")
     private String docdbPassword;
 
-    public String testPostgresConnectivity() {
-        return testPostgresConnection(pgHost);
-    }
+    @Autowired
+    private JdbcTemplate jdbcTemplate;
 
-    public String testPostgresProxyConnectivity() {
-        return testPostgresConnection(pgProxyEndpoint);
-    }
+    @Autowired
+    private MongoTemplate mongoTemplate;
 
-    private String testPostgresConnection(String host) {
-        String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", host, pgPort, pgDbName);
-        logger.info("Conectando a PostgreSQL: {}", jdbcUrl);
-
+    public String testPostgresConnectivity() throws Exception {
         String resultado;
-        try (Connection conn = DriverManager.getConnection(jdbcUrl, pgUser, pgPassword);
-                Statement stmt = conn.createStatement();
-                ResultSet rs = stmt.executeQuery("SELECT version();")) {
+
+        try {
+            logger.info("pgEndpoint: " + pgEndpoint);
+            resultado = jdbcTemplate.queryForObject("SELECT version()", String.class);
+        } catch (Exception e) {
+            logger.error("Error de SQL: {}", e.getMessage());
+            throw e;
+        }
+
+        return resultado;
+    }
+
+    public String testPostgresProxyConnectivity() throws Exception {
+        String resultado;
+        String jdbcUrl = String.format("jdbc:postgresql://%s:%s/%s", pgProxyEndpoint, pgProxyPort, pgProxyDbName);
+        logger.info("pgProxyEndpoint: " + jdbcUrl);
+
+        try (Connection conn = DriverManager.getConnection(jdbcUrl, pgProxyUser, pgProxyPassword);
+            Statement stmt = conn.createStatement();
+            ResultSet rs = stmt.executeQuery("SELECT version();")) {
 
             logger.info("Conexión a PostgreSQL exitosa.");
 
@@ -84,7 +95,7 @@ public class DatabaseService {
 
         } catch (SQLException e) {
             logger.error("Error de SQL: {}", e.getMessage());
-            return "Error al conectar: " + e.getMessage();
+            throw e;
         }
 
         return resultado;
@@ -98,23 +109,15 @@ public class DatabaseService {
         logger.info("Conectando a DocumentDB con URI: {}", docdbUri);
 
         try {
-            ConnectionString connectionString = new ConnectionString(docdbUri);
-            MongoClientSettings settings = MongoClientSettings.builder()
-                    .applyConnectionString(connectionString)
-                    .build();
+            MongoDatabase database = mongoTemplate.getDb();
+            Document pingResult = database.runCommand(new Document("ping", 1));
+            logger.info("Ping a DocumentDB -> {}", pingResult.toJson());
 
-            try (MongoClient mongoClient = MongoClients.create(settings)) {
-                MongoDatabase database = mongoClient.getDatabase(docdbDatabase);
-
-                Document pingResult = database.runCommand(new Document("ping", 1));
-                logger.info("Ping a DocumentDB -> {}", pingResult.toJson());
-
-                Document buildInfo = database.runCommand(new Document("buildInfo", 1));
-                return "DocumentDB buildInfo: " + buildInfo.toJson();
-            }
+            Document buildInfo = database.runCommand(new Document("buildInfo", 1));
+            return "DocumentDB buildInfo: " + buildInfo.toJson();
         } catch (Exception e) {
             logger.error("Error conectando a DocumentDB: {}", e.getMessage());
-            return "Error conectando a DocumentDB: " + e.getMessage();
+            throw e;
         }
     }
 }
